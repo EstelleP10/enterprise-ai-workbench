@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        东方智行 · Enterprise AI Workbench
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+
+</head>
+
+
+<body>
+
+<div class="app">
+
+
+    <!-- =================================================
+         Sidebar
+    ================================================= -->
+
+    <aside class="sidebar">
+
+
+        <!-- Logo -->
+
+        <div class="logo">
+
+            <div class="logo-seal">
+                旅
+            </div>
+
+            <div>
+
+                <div class="logo-title">
+                    东方智行
+                </div>
+
+                <div class="logo-subtitle">
+                    ENTERPRISE AI WORKBENCH
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Main Navigation -->
+
+        <div class="nav-title">
+            WORKSPACE
+        </div>
+
+
+        <button
+            class="nav-item active"
+            data-page="dashboard"
+        >
+
+            <span class="nav-icon">
+                ◇
+            </span>
+
+            <span>
+                首页
+            </span>
+
+        </button>
+
+
+        <button
+            class="nav-item"
+            data-page="knowledge"
+        >
+
+            <span class="nav-icon">
+                ▤
+            </span>
+
+            <span>
+                企业知识库
+            </span>
+
+            <span
+                class="nav-badge"
+                id="sidebarKnowledgeCount"
+            >
+                -
+            </span>
+
+        </button>
+
+
+        <button
+            class="nav-item"
+            data-page="agent"
+        >
+
+            <span class="nav-icon">
+                ✦
+            </span>
+
+            <span>
+                AI Agent
+            </span>
+
+        </button>
+
+
+        <button
+            class="nav-item"
+            data-page="workflow"
+        >
+
+            <span class="nav-icon">
+                ⟡
+            </span>
+
+            <span>
+                Workflow
+            </span>
+
+        </button>
+
+
+        <div class="nav-title history-title">
+            HISTORY
+        </div>
+
+
+        <button
+            class="nav-item"
+            data-page="sessions"
+        >
+
+            <span class="nav-icon">
+                ◷
+            </span>
+
+            <span>
+                最近会话
+            </span>
+
+        </button>
+
+
+        <!-- Sidebar Bottom -->
+
+        <div class="sidebar-bottom">
+
+            <div class="system-status">
+
+                <span class="status-dot"></span>
+
+                <span>
+                    Enterprise Agent Online
+                </span>
+
+            </div>
+
+        </div>
+
+
+    </aside>
+
+
+
+    <!-- =================================================
+         Main
+    ================================================= -->
+
+    <main class="main">
+
+
+        <!-- =================================================
+             Topbar
+        ================================================= -->
+
+        <header class="topbar">
+
+
+            <div>
+
+                <div
+                    class="page-title"
+                    id="pageTitle"
+                >
+                    企业 AI 工作台
+                </div>
+
+                <div
+                    class="page-description"
+                    id="pageDescription"
+                >
+                    企业级知识、Agent 与 Workflow 工作空间
+                </div>
+
+            </div>
+
+
+            <div class="topbar-right">
+
+                <div class="agent-online">
+
+                    <span class="online-dot"></span>
+
+                    <span>
+                        AI Agent Online
+                    </span>
+
+                </div>
+
+            </div>
+
+
+        </header>
+
+
+
+        <!-- =================================================
+             Content
+        ================================================= -->
+
+        <div class="content">
+
+
+
+            <!-- =================================================
+                 Dashboard
+            ================================================= -->
+
+            <section
+                class="page active"
+                id="page-dashboard"
+            >
+
+
+                <div class="hero">
+
+                    <div class="hero-label">
+                        ENTERPRISE AI AGENT
+                    </div>
+
+                    <h1>
+                        东方智行 · 企业差旅智能助手
+                    </h1>
+
+                    <p>
+                        基于企业知识库、RAG、Agent Tools
+                        与 Workflow 构建的企业级 AI 工作台。
+                        支持企业制度检索、差旅费用计算、
+                        多步骤任务规划与执行轨迹追踪。
+                    </p>
+
+                </div>
+
+
+
+                <!-- Stats -->
+
+                <div class="stats-grid">
+
+
+                    <div class="stat-card">
+
+                        <div class="stat-label">
+                            Agent Status
+                        </div>
+
+                        <div
+                            class="stat-value"
+                            id="agentStatus"
+                        >
+                            Online
+                        </div>
+
+                        <div class="stat-desc">
+                            Enterprise Travel Agent
+                        </div>
+
+                    </div>
+
+
+                    <div class="stat-card">
+
+                        <div class="stat-label">
+                            Knowledge Documents
+                        </div>
+
+                        <div
+                            class="stat-value"
+                            id="knowledgeDocuments"
+                        >
+                            -
+                        </div>
+
+                        <div class="stat-desc">
+                            企业知识库文档
+                        </div>
+
+                    </div>
+
+
+                    <div class="stat-card">
+
+                        <div class="stat-label">
+                            Knowledge Chunks
+                        </div>
+
+                        <div
+                            class="stat-value"
+                            id="knowledgeChunks"
+                        >
+                            -
+                        </div>
+
+                        <div class="stat-desc">
+                            RAG 检索知识片段
+                        </div>
+
+                    </div>
+
+
+                    <div class="stat-card">
+
+                        <div class="stat-label">
+                            Agent Tools
+                        </div>
+
+                        <div
+                            class="stat-value"
+                            id="toolCount"
+                        >
+                            -
+                        </div>
+
+                        <div class="stat-desc">
+                            可调用工具
+                        </div>
+
+                    </div>
+
+
+                </div>
+
+
+
+                <!-- Dashboard Grid -->
+
+                <div class="dashboard-grid">
+
+
+                    <!-- Agent -->
+
+                    <div class="panel">
+
+                        <div class="panel-header">
+
+                            <div class="panel-title">
+                                Agent Workspace
+                            </div>
+
+                            <div class="panel-more">
+                                ACTIVE
+                            </div>
+
+                        </div>
+
+
+                        <div
+                            class="agent-card clickable"
+                            data-page="agent"
+                        >
+
+                            <div class="agent-avatar">
+                                旅
+                            </div>
+
+                            <div>
+
+                                <div class="agent-name">
+                                    企业差旅助手
+                                </div>
+
+                                <div class="agent-role">
+                                    Knowledge RAG · Tool Calling · Expense Analysis
+                                </div>
+
+                            </div>
+
+                            <div class="agent-status">
+                                ● Online
+                            </div>
+
+                        </div>
+
+
+                        <div
+                            class="agent-card"
+                        >
+
+                            <div class="agent-avatar">
+                                R
+                            </div>
+
+                            <div>
+
+                                <div class="agent-name">
+                                    Retrieval Engine
+                                </div>
+
+                                <div class="agent-role">
+                                    Alibaba DashScope Embedding · ChromaDB
+                                </div>
+
+                            </div>
+
+                            <div class="agent-status">
+                                ● Ready
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- Recent Conversations -->
+
+                    <div class="panel">
+
+                        <div class="panel-header">
+
+                            <div class="panel-title">
+                                最近会话
+                            </div>
+
+                            <div
+                                class="panel-more clickable"
+                                data-page="sessions"
+                            >
+                                VIEW ALL
+                            </div>
+
+                        </div>
+
+
+                        <div id="dashboardSessions">
+
+                            <div class="conversation-empty">
+                                暂无最近会话
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                </div>
+
+
+
+                <!-- Quick Actions -->
+
+                <div class="panel quick-panel">
+
+                    <div class="panel-header">
+
+                        <div class="panel-title">
+                            Quick Actions
+                        </div>
+
+                    </div>
+
+
+                    <div class="quick-actions">
+
+
+                        <button
+                            class="quick-button"
+                            data-question="普通员工去北京出差3天，住宿和伙食补助一共多少钱？"
+                        >
+
+                            <div class="quick-title">
+                                差旅费用估算
+                            </div>
+
+                            <div class="quick-desc">
+                                自动查询制度并计算差旅费用
+                            </div>
+
+                        </button>
+
+
+                        <button
+                            class="quick-button"
+                            data-question="普通员工去北京出差，住宿标准是多少？"
+                        >
+
+                            <div class="quick-title">
+                                查询住宿标准
+                            </div>
+
+                            <div class="quick-desc">
+                                从企业知识库检索制度
+                            </div>
+
+                        </button>
+
+
+                        <button
+                            class="quick-button"
+                            data-question="北京出差每天可以领取多少伙食补助？"
+                        >
+
+                            <div class="quick-title">
+                                查询伙食补助
+                            </div>
+
+                            <div class="quick-desc">
+                                查询城市差旅补助标准
+                            </div>
+
+                        </button>
+
+
+                        <button
+                            class="quick-button"
+                            data-question="企业差旅助手可以做什么？"
+                        >
+
+                            <div class="quick-title">
+                                Agent 能力
+                            </div>
+
+                            <div class="quick-desc">
+                                查看 Agent Tool Calling 能力
+                            </div>
+
+                        </button>
+
+
+                    </div>
+
+                </div>
+
+
+            </section>
+
+
+
+            <!-- =================================================
+                 Knowledge Base
+            ================================================= -->
+
+            <section
+                class="page"
+                id="page-knowledge"
+            >
+
+
+                <div class="section-intro">
+
+                    <h2>
+                        企业知识库
+                    </h2>
+
+                    <p>
+                        基于 RAG 的企业知识检索与知识资产管理
+                    </p>
+
+                </div>
+
+
+                <div class="knowledge-grid">
+
+
+                    <div class="knowledge-card">
+
+                        <div class="knowledge-icon">
+                            ▤
+                        </div>
+
+                        <div class="knowledge-title">
+                            Documents
+                        </div>
+
+                        <div
+                            class="knowledge-value"
+                            id="kbDocumentCount"
+                        >
+                            -
+                        </div>
+
+                        <div class="knowledge-desc">
+                            当前知识库文档
+                        </div>
+
+                    </div>
+
+
+                    <div class="knowledge-card">
+
+                        <div class="knowledge-icon">
+                            ◈
+                        </div>
+
+                        <div class="knowledge-title">
+                            Chunks
+                        </div>
+
+                        <div
+                            class="knowledge-value"
+                            id="kbChunkCount"
+                        >
+                            -
+                        </div>
+
+                        <div class="knowledge-desc">
+                            文档切分后的知识片段
+                        </div>
+
+                    </div>
+
+
+                    <div class="knowledge-card">
+
+                        <div class="knowledge-icon">
+                            ◎
+                        </div>
+
+                        <div class="knowledge-title">
+                            Embedding
+                        </div>
+
+                        <div
+                            class="knowledge-value"
+                            id="embeddingModel"
+                        >
+                            -
+                        </div>
+
+                        <div class="knowledge-desc">
+                            向量模型
+                        </div>
+
+                    </div>
+
+
+                </div>
+
+
+                <div class="panel knowledge-source-panel">
+
+                    <div class="panel-header">
+
+                        <div class="panel-title">
+                            Knowledge Sources
+                        </div>
+
+                        <div class="panel-more">
+                            VECTOR DATABASE
+                        </div>
+
+                    </div>
+
+
+                    <div id="knowledgeDocumentList">
+
+                        <div class="conversation-empty">
+                            正在加载知识库...
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+            </section>
+
+
+
+            <!-- =================================================
+                 Agent
+            ================================================= -->
+
+            <section
+                class="page"
+                id="page-agent"
+            >
+
+
+                <div class="section-intro">
+
+                    <h2>
+                        AI Agent
+                    </h2>
+
+                    <p>
+                        企业差旅智能助手 · RAG + Tool Calling + Workflow
+                    </p>
+
+                </div>
+
+
+                <div class="chat-container">
+
+
+                    <!-- Chat Header -->
+
+                    <div class="chat-header">
+
+
+                        <div class="chat-header-icon">
+                            旅
+                        </div>
+
+
+                        <div>
+
+                            <div class="chat-title">
+                                企业差旅助手
+                            </div>
+
+                            <div class="chat-subtitle">
+                                Enterprise Travel Agent
+                            </div>
+
+                        </div>
+
+
+                        <div class="chat-online">
+                            ● ONLINE
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- Messages -->
+
+                    <div
+                        class="chat-messages"
+                        id="chatMessages"
+                    >
+
+
+                        <!-- AI Welcome -->
+
+                        <div class="message ai">
+
+                            <div class="message-bubble">
+
+                                <div>
+                                    你好，我是企业差旅助手。
+                                </div>
+
+                                <div style="margin-top:8px;">
+                                    我可以帮助你查询企业差旅制度、
+                                    住宿标准、伙食补助、市内交通补助，
+                                    也可以帮你估算出差费用。
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                    </div>
+
+
+
+                    <!-- Input -->
+
+                    <div class="chat-input-area">
+
+
+                        <input
+                            id="question"
+                            type="text"
+                            placeholder="请输入你的差旅问题，例如：普通员工去北京出差3天需要多少钱？"
+                            autocomplete="off"
+                        >
+
+
+                        <button
+                            id="sendButton"
+                            type="button"
+                        >
+                            发送
+                        </button>
+
+
+                    </div>
+
+
+                </div>
+
+
+
+                <!-- Agent Execution Summary -->
+
+                <div
+                    class="panel"
+                    style="margin-top:20px;"
+                >
+
+                    <div class="panel-header">
+
+                        <div class="panel-title">
+                            Agent Execution
+                        </div>
+
+                        <div
+                            class="panel-more"
+                            id="agentStatusText"
+                        >
+                            READY
+                        </div>
+
+                    </div>
+
+
+                    <div
+                        id="agentSteps"
+                        class="workflow-monitor"
+                    >
+
+                        <div class="workflow-empty">
+
+                            <div class="workflow-empty-icon">
+                                ⟡
+                            </div>
+
+                            <div>
+                                等待 Agent 执行任务
+                            </div>
+
+                            <div class="workflow-empty-desc">
+                                Agent 调用工具后，执行轨迹将在这里展示
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div
+                        class="execution-meta"
+                        id="agentDuration"
+                    >
+                    </div>
+
+                </div>
+
+
+
+                <!-- Sources -->
+
+                <div
+                    class="panel"
+                    style="margin-top:20px;"
+                >
+
+                    <div class="panel-header">
+
+                        <div class="panel-title">
+                            Knowledge Sources
+                        </div>
+
+                        <div class="panel-more">
+                            RAG
+                        </div>
+
+                    </div>
+
+
+                    <div id="agentSources">
+
+                        <div class="conversation-empty">
+                            本次会话暂无知识库来源
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+            </section>
+
+
+
+            <!-- =================================================
+                 Workflow
+            ================================================= -->
+
+            <section
+                class="page"
+                id="page-workflow"
+            >
+
+
+                <div class="section-intro">
+
+                    <h2>
+                        Agent Workflow
+                    </h2>
+
+                    <p>
+                        查看 AI Agent 的任务规划、工具调用与执行轨迹
+                    </p>
+
+                </div>
+
+
+                <div class="workflow-card">
+
+
+                    <div class="panel-header">
+
+                        <div>
+
+                            <div class="panel-title">
+                                Execution Timeline
+                            </div>
+
+                            <div class="workflow-subtitle">
+                                Agent Task Planning → Retrieval → Tool Calling → Final Answer
+                            </div>
+
+                        </div>
+
+
+                        <div
+                            class="panel-more"
+                            id="workflowStatus"
+                        >
+                            READY
+                        </div>
+
+                    </div>
+
+
+                    <div
+                        id="workflowSteps"
+                        class="workflow-monitor"
+                    >
+
+
+                        <div class="workflow-empty">
+
+                            <div class="workflow-empty-icon">
+                                ⟡
+                            </div>
+
+                            <div>
+                                暂无执行记录
+                            </div>
+
+                            <div class="workflow-empty-desc">
+                                在 AI Agent 页面发送问题后，
+                                这里将展示完整的 Agent 执行轨迹
+                            </div>
+
+                        </div>
+
+
+                    </div>
+
+
+                </div>
+
+
+            </section>
+
+
+
+            <!-- =================================================
+                 Sessions
+            ================================================= -->
+
+            <section
+                class="page"
+                id="page-sessions"
+            >
+
+
+                <div class="section-intro">
+
+                    <h2>
+                        最近会话
+                    </h2>
+
+                    <p>
+                        查看近期 AI Agent 对话与执行记录
+                    </p>
+
+                </div>
+
+
+                <div class="panel">
+
+                    <div class="panel-header">
+
+                        <div class="panel-title">
+                            Conversation History
+                        </div>
+
+                        <div class="panel-more">
+                            AGENT LOG
+                        </div>
+
+                    </div>
+
+
+                    <div id="sessionList">
+
+                        <div class="conversation-empty">
+                            正在加载最近会话...
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+            </section>
+
+
+        </div>
+
+    </main>
+
+</div>
+
+
+
+<script
+    src="{{ url_for('static', filename='js/app.js') }}"
+></script>
+
+
+</body>
+
+</html>
