@@ -22,7 +22,6 @@
 
 ![Enterprise Travel Assistant](docs/images/agent.png)
 
-> 注：如果暂时没有 `docs/images/` 图片，可以先删除上面的截图部分，等后续补充项目截图。
 
 ---
 
@@ -398,7 +397,6 @@ AI_Workbench/
 └── README.md
 ```
 
-> 实际项目文件结构以 GitHub 仓库当前版本为准。
 
 ---
 
@@ -453,7 +451,7 @@ Final Answer
 
 # 🧩 Product Design
 
-本项目不是单纯的 RAG Demo，而是按照企业 AI 产品的方式进行设计。
+本项目以企业 AI 产品为设计目标，将企业知识库、RAG、AI Agent、Tool Calling 与业务场景结合，构建面向企业业务任务的 AI 应用原型。
 
 整体产品结构：
 
