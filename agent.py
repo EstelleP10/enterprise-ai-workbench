@@ -29,7 +29,9 @@ print(
 
 client = OpenAI(
     api_key=API_KEY,
-    base_url="https://dashscope.aliyuncs.com/compatible-mode/v1"
+    base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+    timeout=30.0,
+    max_retries=0
 )
 
 
@@ -659,6 +661,11 @@ def run_agent(user_input):
 
         try:
 
+            print(
+                "正在调用 Qwen Chat API...",
+                flush=True
+            )
+
             response = client.chat.completions.create(
 
                 model="qwen-plus",
@@ -669,6 +676,11 @@ def run_agent(user_input):
 
                 tool_choice="auto"
 
+            )
+
+            print(
+                "Qwen Chat API 返回成功。",
+                flush=True
             )
 
         except Exception as e:

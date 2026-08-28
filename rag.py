@@ -19,8 +19,10 @@ API_KEY = os.getenv("QWEN_API_KEY")
 # ==================================================
 
 client = OpenAI(
-    api_key=API_KEY,
-    base_url="https://dashscope.aliyuncs.com/compatible-mode/v1"
+    api_key=os.getenv("QWEN_API_KEY"),
+    base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+    timeout=30.0,
+    max_retries=0
 )
 
 
@@ -139,7 +141,8 @@ def search_knowledge(question):
     # ==================================================
 
     print(
-        "① 正在生成 Query Embedding..."
+        "① 正在生成 Query Embedding...",
+        flush=True
     )
 
     embedding_response = client.embeddings.create(
