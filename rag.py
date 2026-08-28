@@ -6,7 +6,7 @@ from openai import OpenAI
 
 
 # ==============================
-# 1. 读取 .env
+# 1. 读取环境变量
 # ==============================
 
 load_dotenv()
@@ -23,7 +23,7 @@ client = OpenAI(
 
 
 # ==============================
-# 3. 连接 ChromaDB
+# 3. 创建 ChromaDB 客户端
 # ==============================
 
 chroma_client = chromadb.PersistentClient(
@@ -35,9 +35,31 @@ chroma_client = chromadb.PersistentClient(
 # 4. 获取知识库
 # ==============================
 
-collection = chroma_client.get_collection(
-    name="company_knowledge"
-)
+def get_collection():
+    """
+    获取企业知识库 Collection。
+
+    注意：
+    不在模块加载时直接 get_collection，
+    而是在真正执行检索时再获取。
+
+    这样可以避免 Render 等新环境在
+    知识库尚未初始化时直接报错。
+    """
+
+    try:
+
+        collection = chroma_client.get_collection(
+            name="company_knowledge"
+        )
+
+        return collection
+
+    except Exception as e:
+
+        raise RuntimeError(
+            "企业知识库不存在，请先完成知识库初始化。"
+        ) from e
 
 
 # ==============================
@@ -48,31 +70,21 @@ collection = chroma_client.get_collection(
 # 说明用户问题可能与知识库无关。
 #
 # Distance 越小，通常表示向量越相似。
+
 DISTANCE_THRESHOLD = 1.0
 
 
-# 相对相关性范围。
-#
-# 不再使用固定的：
-#
-# Distance < 0.50
-#
-# 而是以最相关结果为基准，
-# 允许其他结果比最佳结果稍微差一些。
-#
-# 例如：
-#
-# Best Distance = 0.45
-# Margin = 0.20
-#
-# 最大允许 Distance：
-# 0.45 + 0.20 = 0.65
-#
-# 那么 0.53 的结果仍然可以进入 Context。
+# ==============================
+# 相对相关性范围
+# ==============================
+
 RELATIVE_DISTANCE_MARGIN = 0.20
 
 
-# 一次最多检索多少个 Chunk。
+# ==============================
+# 一次最多检索多少个 Chunk
+# ==============================
+
 TOP_K = 5
 
 
@@ -107,7 +119,14 @@ def search_knowledge(question):
 
 
     # ==============================
-    # 6.1 将用户问题转换成向量
+    # 6.1 获取知识库
+    # ==============================
+
+    collection = get_collection()
+
+
+    # ==============================
+    # 6.2 将用户问题转换成向量
     # ==============================
 
     print(
@@ -132,7 +151,7 @@ def search_knowledge(question):
 
 
     # ==============================
-    # 6.2 从 ChromaDB 检索 Top-K
+    # 6.3 从 ChromaDB 检索 Top-K
     # ==============================
 
     print(
@@ -141,6 +160,7 @@ def search_knowledge(question):
 
 
     results = collection.query(
+
         query_embeddings=[
             question_embedding
         ],
@@ -156,7 +176,7 @@ def search_knowledge(question):
 
 
     # ==============================
-    # 6.3 获取检索结果
+    # 6.4 获取检索结果
     # ==============================
 
     documents = results["documents"][0]
@@ -177,7 +197,7 @@ def search_knowledge(question):
 
 
     # ==============================
-    # 6.4 打印所有 Top-K 结果
+    # 6.5 打印所有 Top-K 结果
     # ==============================
 
     for i, (
@@ -185,42 +205,40 @@ def search_knowledge(question):
         metadata,
         distance
     ) in enumerate(
+
         zip(
             documents,
             metadatas,
             distances
         ),
+
         start=1
+
     ):
 
         print(
             f"\n--- Result {i} ---"
         )
 
-
         print(
             "来源：",
             metadata.get("source")
         )
-
 
         print(
             "章节：",
             metadata.get("chapter")
         )
 
-
         print(
             "条款：",
             metadata.get("section")
         )
 
-
         print(
             "标题：",
             metadata.get("title")
         )
-
 
         print(
             "Distance：",
@@ -229,7 +247,7 @@ def search_knowledge(question):
 
 
     # ==============================
-    # 6.5 判断最相关结果
+    # 6.6 判断最相关结果
     # ==============================
 
     best_distance = distances[0]
@@ -241,9 +259,6 @@ def search_knowledge(question):
     )
 
 
-    # 如果最相关结果都非常不相关，
-    # 则认为知识库没有找到有效内容。
-
     if best_distance >= DISTANCE_THRESHOLD:
 
         print(
@@ -251,42 +266,36 @@ def search_knowledge(question):
             f"{DISTANCE_THRESHOLD}"
         )
 
-
         print(
             "判定：知识库中没有找到相关内容"
         )
-
 
         print(
             "================================\n"
         )
 
-
         return {
-            "found": False,
-            "context": "",
-            "sources": []
+
+            "found":
+                False,
+
+            "context":
+                "",
+
+            "sources":
+                []
+
         }
 
 
     # ==============================
-    # 6.6 根据相对相关性进行过滤
+    # 6.7 根据相对相关性进行过滤
     # ==============================
 
     filtered_documents = []
 
     sources = []
 
-
-    # 最相关结果作为基准。
-    #
-    # 例如：
-    #
-    # Best Distance = 0.45
-    #
-    # 那么允许的最大 Distance：
-    #
-    # 0.45 + 0.20 = 0.65
 
     max_allowed_distance = (
         best_distance
@@ -301,7 +310,10 @@ def search_knowledge(question):
 
     print(
         "最佳 Distance：",
-        round(best_distance, 4)
+        round(
+            best_distance,
+            4
+        )
     )
 
 
@@ -314,22 +326,22 @@ def search_knowledge(question):
     )
 
 
-    # 遍历所有 Top-K 结果。
+    # ==============================
+    # 遍历 Top-K
+    # ==============================
 
     for (
         document,
         metadata,
         distance
+
     ) in zip(
+
         documents,
         metadatas,
         distances
+
     ):
-
-
-        # 如果当前结果距离
-        # 小于等于允许的最大距离，
-        # 则认为它与最佳结果足够接近。
 
         if distance <= max_allowed_distance:
 
@@ -352,16 +364,24 @@ def search_knowledge(question):
             sources.append({
 
                 "source":
-                    metadata.get("source"),
+                    metadata.get(
+                        "source"
+                    ),
 
                 "chapter":
-                    metadata.get("chapter"),
+                    metadata.get(
+                        "chapter"
+                    ),
 
                 "section":
-                    metadata.get("section"),
+                    metadata.get(
+                        "section"
+                    ),
 
                 "title":
-                    metadata.get("title"),
+                    metadata.get(
+                        "title"
+                    ),
 
                 "distance":
                     distance
@@ -383,7 +403,7 @@ def search_knowledge(question):
 
 
     # ==============================
-    # 6.7 判断过滤之后是否还有结果
+    # 6.8 判断过滤结果
     # ==============================
 
     if not filtered_documents:
@@ -393,21 +413,26 @@ def search_knowledge(question):
             "通过相关性过滤"
         )
 
-
         print(
             "================================\n"
         )
 
-
         return {
-            "found": False,
-            "context": "",
-            "sources": []
+
+            "found":
+                False,
+
+            "context":
+                "",
+
+            "sources":
+                []
+
         }
 
 
     # ==============================
-    # 6.8 构建最终 Context
+    # 6.9 构建最终 Context
     # ==============================
 
     context = "\n\n".join(
@@ -425,11 +450,9 @@ def search_knowledge(question):
         "\n=============================="
     )
 
-
     print(
         "RAG 检索完成"
     )
-
 
     print(
         "==============================\n"
@@ -437,7 +460,7 @@ def search_knowledge(question):
 
 
     # ==============================
-    # 6.9 返回 RAG 结果
+    # 6.10 返回 RAG 结果
     # ==============================
 
     return {
