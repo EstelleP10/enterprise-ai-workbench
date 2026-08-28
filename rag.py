@@ -5,66 +5,67 @@ from dotenv import load_dotenv
 from openai import OpenAI
 
 
-# ==============================
+# ==================================================
 # 1. 读取环境变量
-# ==============================
+# ==================================================
 
 load_dotenv()
 
+API_KEY = os.getenv("QWEN_API_KEY")
 
-# ==============================
+
+# ==================================================
 # 2. 创建阿里云百炼客户端
-# ==============================
+# ==================================================
 
 client = OpenAI(
-    api_key=os.getenv("QWEN_API_KEY"),
+    api_key=API_KEY,
     base_url="https://dashscope.aliyuncs.com/compatible-mode/v1"
 )
 
 
-# ==============================
+# ==================================================
 # 3. 创建 ChromaDB 客户端
-# ==============================
+# ==================================================
 
 chroma_client = chromadb.PersistentClient(
     path="./chroma_db"
 )
 
 
-# ==============================
-# 4. 获取知识库
-# ==============================
+# ==================================================
+# 4. Lazy Load 知识库
+# ==================================================
 
 def get_collection():
     """
-    获取企业知识库 Collection。
+    延迟加载企业知识库。
 
-    注意：
-    不在模块加载时直接 get_collection，
-    而是在真正执行检索时再获取。
+    不在模块 import 时直接获取 Collection，
+    避免 Render 部署启动时知识库尚未初始化，
+    导致：
 
-    这样可以避免 Render 等新环境在
-    知识库尚未初始化时直接报错。
+        Collection [company_knowledge] does not exist
+
     """
 
     try:
 
-        collection = chroma_client.get_collection(
+        return chroma_client.get_collection(
             name="company_knowledge"
         )
-
-        return collection
 
     except Exception as e:
 
         raise RuntimeError(
             "企业知识库不存在，请先完成知识库初始化。"
-        ) from e
+            f"原始错误：{str(e)}"
+        )
 
 
-# ==============================
+# ==================================================
 # 5. RAG 参数
-# ==============================
+# ==================================================
 
 # 如果最相关结果的 Distance 太大，
 # 说明用户问题可能与知识库无关。
@@ -74,23 +75,23 @@ def get_collection():
 DISTANCE_THRESHOLD = 1.0
 
 
-# ==============================
-# 相对相关性范围
-# ==============================
+# ==================================================
+# 6. 相对相关性范围
+# ==================================================
 
 RELATIVE_DISTANCE_MARGIN = 0.20
 
 
-# ==============================
-# 一次最多检索多少个 Chunk
-# ==============================
+# ==================================================
+# 7. Top-K
+# ==================================================
 
 TOP_K = 5
 
 
-# ==============================
-# 6. 知识库检索函数
-# ==============================
+# ==================================================
+# 8. 知识库检索函数
+# ==================================================
 
 def search_knowledge(question):
     """
@@ -118,55 +119,56 @@ def search_knowledge(question):
     )
 
 
-    # ==============================
-    # 6.1 获取知识库
-    # ==============================
+    # ==================================================
+    # 8.1 获取知识库
+    # ==================================================
+
+    print(
+        "正在加载企业知识库..."
+    )
 
     collection = get_collection()
 
+    print(
+        "企业知识库加载成功。"
+    )
 
-    # ==============================
-    # 6.2 将用户问题转换成向量
-    # ==============================
+
+    # ==================================================
+    # 8.2 将用户问题转换成向量
+    # ==================================================
 
     print(
         "① 正在生成 Query Embedding..."
     )
-
 
     embedding_response = client.embeddings.create(
         model="text-embedding-v4",
         input=question
     )
 
-
     question_embedding = (
         embedding_response.data[0].embedding
     )
-
 
     print(
         "① Query Embedding 生成完成"
     )
 
 
-    # ==============================
-    # 6.3 从 ChromaDB 检索 Top-K
-    # ==============================
+    # ==================================================
+    # 8.3 从 ChromaDB 检索 Top-K
+    # ==================================================
 
     print(
         f"② 正在检索 Top {TOP_K}..."
     )
 
-
     results = collection.query(
-
         query_embeddings=[
             question_embedding
         ],
-
         n_results=TOP_K,
-
         include=[
             "documents",
             "metadatas",
@@ -174,10 +176,14 @@ def search_knowledge(question):
         ]
     )
 
+    print(
+        "② 检索完成"
+    )
 
-    # ==============================
-    # 6.4 获取检索结果
-    # ==============================
+
+    # ==================================================
+    # 8.4 获取检索结果
+    # ==================================================
 
     documents = results["documents"][0]
 
@@ -186,34 +192,42 @@ def search_knowledge(question):
     distances = results["distances"][0]
 
 
-    print(
-        "② 检索完成"
-    )
+    # ==================================================
+    # 防御性检查
+    # ==================================================
 
+    if not documents:
+
+        print(
+            "知识库没有返回任何结果。"
+        )
+
+        return {
+            "found": False,
+            "context": "",
+            "sources": []
+        }
+
+
+    # ==================================================
+    # 8.5 打印 Top-K 结果
+    # ==================================================
 
     print(
         "\n检索结果："
     )
-
-
-    # ==============================
-    # 6.5 打印所有 Top-K 结果
-    # ==============================
 
     for i, (
         document,
         metadata,
         distance
     ) in enumerate(
-
         zip(
             documents,
             metadatas,
             distances
         ),
-
         start=1
-
     ):
 
         print(
@@ -246,12 +260,11 @@ def search_knowledge(question):
         )
 
 
-    # ==============================
-    # 6.6 判断最相关结果
-    # ==============================
+    # ==================================================
+    # 8.6 判断最相关结果
+    # ==================================================
 
     best_distance = distances[0]
-
 
     print(
         "\n最相关 Distance：",
@@ -275,27 +288,19 @@ def search_knowledge(question):
         )
 
         return {
-
-            "found":
-                False,
-
-            "context":
-                "",
-
-            "sources":
-                []
-
+            "found": False,
+            "context": "",
+            "sources": []
         }
 
 
-    # ==============================
-    # 6.7 根据相对相关性进行过滤
-    # ==============================
+    # ==================================================
+    # 8.7 根据相对相关性进行过滤
+    # ==================================================
 
     filtered_documents = []
 
     sources = []
-
 
     max_allowed_distance = (
         best_distance
@@ -307,7 +312,6 @@ def search_knowledge(question):
         "\n③ 开始进行相对相关性过滤"
     )
 
-
     print(
         "最佳 Distance：",
         round(
@@ -315,7 +319,6 @@ def search_knowledge(question):
             4
         )
     )
-
 
     print(
         "允许的最大 Distance：",
@@ -326,21 +329,18 @@ def search_knowledge(question):
     )
 
 
-    # ==============================
-    # 遍历 Top-K
-    # ==============================
+    # ==================================================
+    # 8.8 遍历 Top-K
+    # ==================================================
 
     for (
         document,
         metadata,
         distance
-
     ) in zip(
-
         documents,
         metadatas,
         distances
-
     ):
 
         if distance <= max_allowed_distance:
@@ -355,39 +355,28 @@ def search_knowledge(question):
                 )
             )
 
-
             filtered_documents.append(
                 document
             )
 
-
             sources.append({
 
                 "source":
-                    metadata.get(
-                        "source"
-                    ),
+                    metadata.get("source"),
 
                 "chapter":
-                    metadata.get(
-                        "chapter"
-                    ),
+                    metadata.get("chapter"),
 
                 "section":
-                    metadata.get(
-                        "section"
-                    ),
+                    metadata.get("section"),
 
                 "title":
-                    metadata.get(
-                        "title"
-                    ),
+                    metadata.get("title"),
 
                 "distance":
                     distance
 
             })
-
 
         else:
 
@@ -402,9 +391,9 @@ def search_knowledge(question):
             )
 
 
-    # ==============================
-    # 6.8 判断过滤结果
-    # ==============================
+    # ==================================================
+    # 8.9 判断过滤结果
+    # ==================================================
 
     if not filtered_documents:
 
@@ -418,22 +407,15 @@ def search_knowledge(question):
         )
 
         return {
-
-            "found":
-                False,
-
-            "context":
-                "",
-
-            "sources":
-                []
-
+            "found": False,
+            "context": "",
+            "sources": []
         }
 
 
-    # ==============================
-    # 6.9 构建最终 Context
-    # ==============================
+    # ==================================================
+    # 8.10 构建最终 Context
+    # ==================================================
 
     context = "\n\n".join(
         filtered_documents
@@ -444,7 +426,6 @@ def search_knowledge(question):
         "\n④ 最终进入 Context 的 Chunk 数量：",
         len(filtered_documents)
     )
-
 
     print(
         "\n=============================="
@@ -459,9 +440,9 @@ def search_knowledge(question):
     )
 
 
-    # ==============================
-    # 6.10 返回 RAG 结果
-    # ==============================
+    # ==================================================
+    # 8.11 返回 RAG 结果
+    # ==================================================
 
     return {
 
