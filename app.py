@@ -1,5 +1,10 @@
 from flask import Flask, request, jsonify, render_template
+import os
 from agent import run_agent
+from build_knowledge_base import (
+    build_knowledge_base,
+    knowledge_base_exists
+)
 
 
 # ==================================================
@@ -7,6 +12,34 @@ from agent import run_agent
 # ==================================================
 
 app = Flask(__name__)
+
+# ==================================================
+# 初始化企业知识库
+# ==================================================
+
+print("======================================")
+print("Enterprise AI Workbench 正在启动...")
+print("======================================")
+
+try:
+
+    if knowledge_base_exists():
+
+        print("企业知识库已存在，直接启动。")
+
+    else:
+
+        print("未检测到企业知识库。")
+        print("正在自动初始化知识库...")
+
+        build_knowledge_base()
+
+except Exception as e:
+
+    print("企业知识库初始化失败：")
+    print(e)
+
+    raise
 
 
 # ==================================================
@@ -396,8 +429,10 @@ if __name__ == "__main__":
     print("访问地址：http://127.0.0.1:5001")
     print("======================================")
 
+    port = int(os.environ.get("PORT", 5001))
+
     app.run(
-        host="0.0.0.0",
-        port=5001,
-        debug=False
+    host="0.0.0.0",
+    port=port,
+    debug=False
     )

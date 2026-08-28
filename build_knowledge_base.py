@@ -7,182 +7,250 @@ from openai import OpenAI
 from pypdf import PdfReader
 
 
-# 读取 .env
+# ==================================================
+# 1. 加载环境变量
+# ==================================================
+
 load_dotenv()
 
+API_KEY = os.getenv("QWEN_API_KEY")
 
-# 创建阿里云百炼客户端
+
+# ==================================================
+# 2. 创建千问客户端
+# ==================================================
+
 client = OpenAI(
-    api_key=os.getenv("QWEN_API_KEY"),
+    api_key=API_KEY,
     base_url="https://dashscope.aliyuncs.com/compatible-mode/v1"
 )
 
 
-# 创建 ChromaDB
+# ==================================================
+# 3. 创建 ChromaDB 客户端
+# ==================================================
+
 chroma_client = chromadb.PersistentClient(
     path="./chroma_db"
 )
 
 
-# 如果知识库已经存在，先删除旧知识库
-try:
-    chroma_client.delete_collection(
+# ==================================================
+# 4. 构建企业知识库
+# ==================================================
+
+def build_knowledge_base():
+    print("\n======================================")
+    print("开始构建企业知识库")
+    print("======================================")
+
+    # --------------------------------------------------
+    # 检查 API Key
+    # --------------------------------------------------
+
+    if not API_KEY:
+        raise ValueError(
+            "未检测到 QWEN_API_KEY，请检查环境变量配置。"
+        )
+
+    # --------------------------------------------------
+    # PDF 路径
+    # --------------------------------------------------
+
+    pdf_path = "./documents/差旅报销管理制度.pdf"
+
+    if not os.path.exists(pdf_path):
+        raise FileNotFoundError(
+            f"找不到知识库 PDF：{pdf_path}"
+        )
+
+    # --------------------------------------------------
+    # 删除旧知识库
+    # --------------------------------------------------
+
+    try:
+        chroma_client.delete_collection(
+            name="company_knowledge"
+        )
+        print("旧知识库已删除。")
+    except Exception:
+        print("没有找到旧知识库，直接创建新知识库。")
+
+    # --------------------------------------------------
+    # 创建新知识库
+    # --------------------------------------------------
+
+    collection = chroma_client.create_collection(
         name="company_knowledge"
     )
-    print("旧知识库已删除。")
-except Exception:
-    print("没有找到旧知识库，直接创建新知识库。")
 
+    # --------------------------------------------------
+    # 读取 PDF
+    # --------------------------------------------------
 
-# 创建全新的知识库
-collection = chroma_client.create_collection(
-    name="company_knowledge"
-)
+    reader = PdfReader(pdf_path)
 
+    text = ""
 
-# PDF 文件路径
-pdf_path = "./documents/差旅报销管理制度.pdf"
+    for page in reader.pages:
+        page_text = page.extract_text()
 
+        if page_text:
+            text += page_text + "\n"
 
-# 读取 PDF
-reader = PdfReader(pdf_path)
+    print("PDF读取成功！")
 
+    # --------------------------------------------------
+    # 清理文本
+    # --------------------------------------------------
 
-# 提取所有页面文本
-text = ""
+    text = text.replace("\u00a0", " ")
+    text = re.sub(r"\n+", "\n", text)
 
-for page in reader.pages:
-    page_text = page.extract_text()
+    # --------------------------------------------------
+    # 按「第X条」切分 Chunk
+    # --------------------------------------------------
 
-    if page_text:
-        text += page_text + "\n"
-
-
-print("PDF读取成功！")
-
-
-# 清理文本
-text = text.replace("\u00a0", " ")
-text = re.sub(r"\n+", "\n", text)
-
-
-# 按照“第X条”进行 Chunk
-chunks = re.split(
-    r"(?=第[一二三四五六七八九十百千万]+条)",
-    text
-)
-
-
-# 清理 Chunk
-chunks = [
-    chunk.strip()
-    for chunk in chunks
-    if chunk.strip()
-]
-
-
-print("Chunk数量：", len(chunks))
-
-
-# 生成 Chunk ID
-ids = [
-    f"chunk_{i + 1:03d}"
-    for i in range(len(chunks))
-]
-
-
-# 创建 Metadata
-metadatas = []
-
-current_chapter = "总则"
-
-
-for chunk in chunks:
-
-    # 尝试提取章节
-    chapter_match = re.search(
-        r"(第[一二三四五六七八九十百千万]+章\s+[^\n]+)",
-        chunk
+    chunks = re.split(
+        r"(?=第[一二三四五六七八九十百千万]+条)",
+        text
     )
 
-    if chapter_match:
-        current_chapter = chapter_match.group(1)
+    chunks = [
+        chunk.strip()
+        for chunk in chunks
+        if chunk.strip()
+    ]
 
-    # 提取条款号
-    section_match = re.match(
-        r"(第[一二三四五六七八九十百千万]+条)",
-        chunk
-    )
+    print(f"Chunk数量：{len(chunks)}")
 
-    if section_match:
-        section = section_match.group(1)
-    else:
-        section = "制度标题"
+    # --------------------------------------------------
+    # Chunk ID
+    # --------------------------------------------------
 
-    # 提取条款标题
-    title_match = re.match(
-        r"第[一二三四五六七八九十百千万]+条\s+([^\n]+)",
-        chunk
-    )
+    ids = [
+        f"chunk_{i + 1:03d}"
+        for i in range(len(chunks))
+    ]
 
-    if title_match:
-        title = title_match.group(1)
-    else:
-        title = "制度标题"
+    # --------------------------------------------------
+    # Metadata
+    # --------------------------------------------------
 
-    metadatas.append(
-        {
+    metadatas = []
+    current_chapter = "总则"
+
+    for chunk in chunks:
+
+        # 提取章节
+        chapter_match = re.search(
+            r"(第[一二三四五六七八九十百千万]+章\s+[^\n]+)",
+            chunk
+        )
+
+        if chapter_match:
+            current_chapter = chapter_match.group(1)
+
+        # 提取条款编号
+        section_match = re.match(
+            r"(第[一二三四五六七八九十百千万]+条)",
+            chunk
+        )
+
+        if section_match:
+            section = section_match.group(1)
+        else:
+            section = "制度标题"
+
+        # 提取条款标题
+        title_match = re.match(
+            r"第[一二三四五六七八九十百千万]+条\s+([^\n]+)",
+            chunk
+        )
+
+        if title_match:
+            title = title_match.group(1)
+        else:
+            title = "制度标题"
+
+        metadatas.append({
             "source": "差旅报销管理制度.pdf",
             "chapter": current_chapter,
             "section": section,
             "title": title
-        }
+        })
+
+    # --------------------------------------------------
+    # 生成 Embedding
+    # --------------------------------------------------
+
+    print("正在生成 Embedding，请稍候……")
+
+    BATCH_SIZE = 10
+    embeddings = []
+
+    for i in range(0, len(chunks), BATCH_SIZE):
+
+        batch = chunks[i:i + BATCH_SIZE]
+
+        print(
+            f"正在处理第 {i + 1} - "
+            f"{i + len(batch)} 个 Chunk..."
+        )
+
+        response = client.embeddings.create(
+            model="text-embedding-v4",
+            input=batch
+        )
+
+        batch_embeddings = [
+            item.embedding
+            for item in response.data
+        ]
+
+        embeddings.extend(batch_embeddings)
+
+    # --------------------------------------------------
+    # 保存到 ChromaDB
+    # --------------------------------------------------
+
+    collection.upsert(
+        ids=ids,
+        documents=chunks,
+        embeddings=embeddings,
+        metadatas=metadatas
     )
 
+    print("\n知识库构建完成！")
+    print("当前文档数量：", collection.count())
+    print("向量维度：", len(embeddings[0]))
 
-# 使用 text-embedding-v4 生成向量
-print("正在生成 Embedding，请稍候……")
+    print("======================================")
+    print("企业知识库初始化完成")
+    print("======================================\n")
 
-
-# 每次最多处理 10 个 Chunk
-BATCH_SIZE = 10
-
-
-# 用来保存所有向量
-embeddings = []
+    return True
 
 
-# 按批次处理 Chunk
-for i in range(0, len(chunks), BATCH_SIZE):
+# ==================================================
+# 5. 判断知识库是否存在
+# ==================================================
 
-    batch = chunks[i:i + BATCH_SIZE]
+def knowledge_base_exists():
+    try:
+        collection = chroma_client.get_collection(
+            name="company_knowledge"
+        )
 
-    print(
-        f"正在处理第 {i + 1} - {i + len(batch)} 个 Chunk..."
-    )
+        return collection.count() > 0
 
-    response = client.embeddings.create(
-        model="text-embedding-v4",
-        input=batch
-    )
-
-    batch_embeddings = [
-        item.embedding
-        for item in response.data
-    ]
-
-    embeddings.extend(batch_embeddings)
+    except Exception:
+        return False
 
 
-# 保存到 ChromaDB
-collection.upsert(
-    ids=ids,
-    documents=chunks,
-    embeddings=embeddings,
-    metadatas=metadatas
-)
+# ==================================================
+# 6. 本地直接运行
+# ==================================================
 
-
-print("知识库构建完成！")
-print("当前文档数量：", collection.count())
-print("向量维度：", len(embeddings[0]))
+if __name__ == "__main__":
+    build_knowledge_base()
